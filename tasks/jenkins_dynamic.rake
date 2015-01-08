@@ -54,7 +54,7 @@ namespace :pl do
         if Pkg::Util::Jenkins.jenkins_job_exists?(job_name)
           raise "Job #{job_name} already exists on #{Pkg::Config.jenkins_build_host}"
         else
-          retry_on_fail(:times => 3) do
+          Pkg::Util::Execution.retry_on_fail(:times => 3) do
             url = Pkg::Util::Jenkins.create_jenkins_job(job_name, xml_file)
             if t == "packaging.xml.erb"
               ENV["PACKAGE_BUILD_URL"] = url
@@ -77,7 +77,10 @@ namespace :pl do
         #
         name = "#{Pkg::Config.project}-packaging-#{Pkg::Config.build_date}-#{Pkg::Config.ref}"
         packaging_job_url = "http://#{Pkg::Config.jenkins_build_host}/job/#{name}"
-        packaging_build_hash = Pkg::Util::Jenkins.poll_jenkins_job(packaging_job_url)
+
+        Pkg::Util::Execution.retry_on_fail(:times => 10, :timeout => 1) do
+          packaging_build_hash = Pkg::Util::Jenkins.poll_jenkins_job(packaging_job_url)
+        end
 
         ##
         # Output status of packaging build for cli consumption
@@ -94,7 +97,10 @@ namespace :pl do
           #
           name = "#{Pkg::Config.project}-msi-#{Pkg::Config.build_date}-#{Pkg::Config.short_ref}"
           msi_job_url = "http://#{Pkg::Config.jenkins_build_host}/job/#{name}"
-          msi_build_hash = Pkg::Util::Jenkins.poll_jenkins_job(msi_job_url)
+
+          Pkg::Util::Execution.retry_on_fail(:times => 10, :timeout => 1) do
+            msi_build_hash = Pkg::Util::Jenkins.poll_jenkins_job(msi_job_url)
+          end
 
           ##
           # Output status of msi build for cli consumption
